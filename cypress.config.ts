@@ -6,6 +6,7 @@ dotenv.config();
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
+  timeout: 60000,
   retries: 1,
   workers: 1,
   reporter: [

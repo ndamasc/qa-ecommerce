@@ -1,0 +1,434 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/workflows/playwright.yml
+.gitignore
+config/env.ts
+package.json
+pages/BasePage.ts
+pages/LoginPage.ts
+playwright.config.ts
+README.md
+tests/api/products.spec.ts
+tests/e2e/signup.spec.ts
+tests/example.spec.ts
+tests/integration/ecommerce_flow.spec.ts
+utils/apiClient.ts
+utils/dataFactory.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="pages/BasePage.ts">
+import { Page, Locator } from '@playwright/test';
+
+export class BasePage {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  async navigateTo(path: string = '/') {
+    await this.page.goto(path);
+  }
+
+  async getTitle() {
+    return await this.page.title();
+  }
+}
+</file>
+
+<file path="pages/LoginPage.ts">
+import { Locator, Page } from '@playwright/test';
+import { BasePage } from './BasePage';
+
+export class LoginPage extends BasePage {
+  readonly loginEmailInput: Locator;
+  readonly loginPasswordInput: Locator;
+  readonly loginButton: Locator;
+  readonly signupNameInput: Locator;
+  readonly signupEmailInput: Locator;
+  readonly signupButton: Locator;
+  readonly newUserMessage: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    // Seletores de Login
+    this.loginEmailInput = page.locator('[data-qa="login-email"]');
+    this.loginPasswordInput = page.locator('[data-qa="login-password"]');
+    this.loginButton = page.locator('[data-qa="login-button"]');
+
+    // Seletores de Cadastro (Signup)
+    this.newUserMessage = page.locator('.signup-form h2');
+    this.signupNameInput = page.locator('[data-qa="signup-name"]');
+    this.signupEmailInput = page.locator('[data-qa="signup-email"]');
+    this.signupButton = page.locator('[data-qa="signup-button"]');
+  }
+
+  async goToSignup() {
+    await this.navigateTo('/login');
+  }
+
+  async initiateSignup(name: string, email: string) {
+    await this.signupNameInput.fill(name);
+    await this.signupEmailInput.fill(email);
+    await this.signupButton.click();
+  }
+
+  async login(email: string, pass: string) {
+    await this.loginEmailInput.fill(email);
+    await this.loginPasswordInput.fill(pass);
+    await this.loginButton.click();
+  }
+}
+</file>
+
+<file path="tests/api/products.spec.ts">
+import { test, expect, request as playwrightRequest } from '@playwright/test';
+import { ApiClient } from '../../utils/apiClient';
+import { ENV } from '../../config/env';
+
+test.describe('API: Validação de Produtos', () => {
+
+  test('Deve retornar lista de produtos com status 200', async ({ request }) => {
+    const apiClient = new ApiClient(request);
+    const response = await apiClient.getProducts();
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('Deve validar a estrutura do produto (Contrato)', async ({ request }) => {
+    const apiClient = new ApiClient(request);
+    const response = await apiClient.getProductById(1);
+    const product = await response.json();
+
+    expect(product).toHaveProperty('id');
+    expect(product).toHaveProperty('title');
+    expect(product).toHaveProperty('price');
+    expect(product).toHaveProperty('image');
+    expect(typeof product.title).toBe('string');
+    expect(typeof product.price).toBe('number');
+  });
+});
+</file>
+
+<file path="tests/e2e/signup.spec.ts">
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../../pages/LoginPage';
+import { DataFactory } from '../../utils/dataFactory';
+
+test.describe('Fluxo de Cadastro e Login', () => {
+  let loginPage: LoginPage;
+  const userData = DataFactory.generateUserData();
+
+  test.beforeEach(async ({ page }) => {
+    loginPage = new LoginPage(page);
+    await loginPage.goToSignup();
+  });
+
+  test('Deve visualizar a seção de novo usuário na tela de login', async () => {
+    await expect(loginPage.newUserMessage).toBeVisible();
+    await expect(loginPage.newUserMessage).toHaveText('New User Signup!');
+  });
+
+  test('Deve iniciar o processo de cadastro com sucesso', async ({ page }) => {
+    await loginPage.initiateSignup(userData.fullName, userData.email);
+    
+    // Validamos se fomos para a tela de "ENTER ACCOUNT INFORMATION"
+    await expect(page.getByText('Enter Account Information')).toBeVisible();
+    await expect(page).toHaveURL(/.*signup/);
+  });
+});
+</file>
+
+<file path="tests/integration/ecommerce_flow.spec.ts">
+import { test, expect } from '@playwright/test';
+import { ApiClient } from '../../utils/apiClient';
+
+test.describe('Integração: UI + API Consistency', () => {
+
+  test('Deve buscar produto via API e validar presença na Vitrine do site', async ({ page, request }) => {
+    const apiClient = new ApiClient(request);
+
+    // 1. Pegamos um produto real da API
+    const response = await apiClient.getProductById(1);
+    expect(response.status()).toBe(200);
+
+    // 2. Navegamos para o site aguardando só o DOM (ignora ads lentos)
+    await page.goto('/products', { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+    // 3. Esperamos o campo de busca estar visível antes de interagir
+    await page.locator('#search_product').waitFor({ state: 'visible', timeout: 15000 });
+
+    // 4. Buscamos o produto
+    const productName = 'Blue Top';
+    await page.locator('#search_product').fill(productName);
+    await page.locator('#submit_search').click();
+
+    // 5. Validação
+    await expect(page.locator('.productinfo p').first()).toContainText(productName, { timeout: 15000 });
+  });
+});
+</file>
+
+<file path="utils/apiClient.ts">
+import { APIRequestContext } from '@playwright/test';
+import { ENV } from '../config/env';
+
+export class ApiClient {
+  private request: APIRequestContext;
+
+  constructor(request: APIRequestContext) {
+    this.request = request;
+  }
+
+  async getProducts() {
+    return await this.request.get(`${ENV.API_URL}/products`);
+  }
+
+  async getProductById(id: number) {
+    return await this.request.get(`${ENV.API_URL}/products/${id}`);
+  }
+}
+</file>
+
+<file path=".github/workflows/playwright.yml">
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    - name: Create .env file
+      run: |
+        echo "BASE_URL=https://automationexercise.com" >> .env
+        echo "API_URL=https://fakestoreapi.com" >> .env
+    - name: Run Playwright tests
+      run: npx playwright test
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+</file>
+
+<file path=".gitignore">
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+allure-results/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+.env
+__pycache__/
+*.log
+</file>
+
+<file path="config/env.ts">
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+export const ENV = {
+  BASE_URL: process.env.BASE_URL || 'https://automationexercise.com',
+  API_URL: process.env.API_URL || 'https://fakestoreapi.com',
+  USER_EMAIL: process.env.TEST_USER_EMAIL,
+  USER_PASSWORD: process.env.TEST_USER_PASSWORD,
+};
+</file>
+
+<file path="package.json">
+{
+  "name": "qa-ecommerce",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "allure-commandline": "^2.38.1",
+    "allure-playwright": "^3.7.1",
+    "dotenv": "^17.4.2"
+  }
+}
+</file>
+
+<file path="playwright.config.ts">
+import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: false,
+  timeout: 60000,
+  retries: 1,
+  workers: 1,
+  reporter: [
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ['allure-playwright'],
+    ['list']
+  ],
+  use: {
+    baseURL: process.env.BASE_URL || 'https://automationexercise.com',
+    headless: true,
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+});
+</file>
+
+<file path="README.md">
+# 🛒 E-commerce QA Suite (Playwright + TypeScript)
+
+Este projeto demonstra uma estratégia de teste de software para um e-commerce, cobrindo camadas de **UI (E2E)**, **API** e **Integração**. O objetivo é demonstrar competências de um **QA Pleno** em automação moderna.
+
+## 🛠️ Tecnologias Utilizadas
+- **Linguagem:** TypeScript
+- **Framework de Testes:** Playwright
+- **Dados Dinâmicos:** Faker.js
+- **CI/CD:** GitHub Actions
+- **Relatórios:** Playwright HTML Report
+
+## 🏗️ Arquitetura do Projeto
+O projeto utiliza o padrão **Page Object Model (POM)** para garantir manutenibilidade e separação de responsabilidades.
+- `pages/`: Mapeamento de elementos e ações das telas.
+- `tests/e2e/`: Fluxos de usuário completos.
+- `tests/api/`: Validação de contratos e respostas do backend.
+- `tests/integration/`: Garantia de consistência entre os dados do backend (API) e o que é exibido no frontend.
+
+## 🚀 Como Rodar os Testes
+
+1. Instale as dependências:
+   ```bash
+   npm install
+
+   npx playwright install
+
+   npx playwright test
+</file>
+
+<file path="tests/example.spec.ts">
+import { test, expect } from '@playwright/test';
+
+test('has title', async ({ page }) => {
+  await page.goto('https://playwright.dev/');
+
+  // Expect a title "to contain" a substring.
+  await expect(page).toHaveTitle(/Playwright/);
+});
+
+test('get started link', async ({ page }) => {
+  await page.goto('https://playwright.dev/');
+
+  // Click the get started link.
+  await page.getByRole('link', { name: 'Get started' }).click();
+
+  // Expects page to have a heading with the name of Installation.
+  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+});
+</file>
+
+<file path="utils/dataFactory.ts">
+import { faker } from '@faker-js/faker';
+
+export class DataFactory {
+  static generateUserData() {
+    return {
+      fullName: faker.person.fullName(),
+      email: faker.internet.email(),
+      password: faker.internet.password({ length: 10 }),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      address: faker.location.streetAddress(),
+      state: faker.location.state(),
+      city: faker.location.city(),
+      zipcode: faker.location.zipCode(),
+      mobile: faker.phone.number()
+    };
+  }
+
+  static generateProductData() {
+    return {
+      name: faker.commerce.productName(),
+      quantity: faker.number.int({ min: 1, max: 5 })
+    };
+  }
+}
+</file>
+
+</files>
