@@ -1,27 +1,55 @@
-# 🛒 E-commerce QA Suite (Playwright + TypeScript)
+# QA E-commerce Automation
 
-Este projeto demonstra uma estratégia de teste de software para um e-commerce, cobrindo camadas de **UI (E2E)**, **API** e **Integração**. O objetivo é demonstrar competências de um **QA Pleno** em automação moderna.
+![Cypress Tests](https://github.com/[ndamasc]/qa-ecommerce/actions/workflows/cypress.yml/badge.svg)
 
-## 🛠️ Tecnologias Utilizadas
-- **Linguagem:** TypeScript
-- **Framework de Testes:** Playwright
-- **Dados Dinâmicos:** Faker.js
-- **CI/CD:** GitHub Actions
-- **Relatórios:** Playwright HTML Report
+Automação E2E desenvolvida com Cypress e TypeScript para validação dos principais fluxos de negócio do SauceDemo.
 
-## 🏗️ Arquitetura do Projeto
-O projeto utiliza o padrão **Page Object Model (POM)** para garantir manutenibilidade e separação de responsabilidades.
-- `pages/`: Mapeamento de elementos e ações das telas.
-- `tests/e2e/`: Fluxos de usuário completos.
-- `tests/api/`: Validação de contratos e respostas do backend.
-- `tests/integration/`: Garantia de consistência entre os dados do backend (API) e o que é exibido no frontend.
+## Stack
 
-## 🚀 Como Rodar os Testes
+- Cypress
+- TypeScript
+- Faker.js
+- Mochawesome
+- GitHub Actions
 
-1. Instale as dependências:
-   ```bash
-   npm install
+## O que este projeto cobre
 
-   npx playwright install
+### Authentication
 
-   npx playwright test
+- Login com usuário válido
+- Usuário bloqueado
+- Credenciais inválidas
+- Campos obrigatórios
+
+### Inventory
+
+- Listagem de produtos
+- Adição ao carrinho
+- Remoção de produtos
+- Ordenação por preço
+
+### Cart
+
+- Persistência dos itens adicionados
+- Remoção individual
+- Remoção total do carrinho
+
+### Checkout
+
+- Fluxo completo de compra
+- Validação de formulário
+- Massa de dados dinâmica com Faker
+
+## Arquitetura
+
+O projeto foi estruturado utilizando Page Object Model (POM) para desacoplamento da camada de UI e maior manutenibilidade.
+
+```text
+cypress
+├── e2e
+├── fixtures
+├── pages
+└── support
+
+shared
+└── utils
