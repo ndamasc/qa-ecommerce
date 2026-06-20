@@ -1,12 +1,8 @@
-
-# Playwright
+cypress/screenshots/
+cypress/videos/
+cypress/reports/
 node_modules/
-/test-results/
-/playwright-report/
-allure-results/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
 .env
 __pycache__/
 *.log
+.DS_Store

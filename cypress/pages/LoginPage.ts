@@ -1,42 +1,59 @@
-import { Locator, Page } from '@playwright/test';
-import { BasePage } from './BasePage';
+export class LoginPage {
 
-export class LoginPage extends BasePage {
-  readonly loginEmailInput: Locator;
-  readonly loginPasswordInput: Locator;
-  readonly loginButton: Locator;
-  readonly signupNameInput: Locator;
-  readonly signupEmailInput: Locator;
-  readonly signupButton: Locator;
-  readonly newUserMessage: Locator;
+  private usernameInput = '[data-test="username"]'
+  private passwordInput = '[data-test="password"]'
+  private loginButton = '[data-test="login-button"]'
+  private errorMessage = '[data-test="error"]'
+  private inventory = '[data-test="inventory-list"]'
 
-  constructor(page: Page) {
-    super(page);
-    // Seletores de Login
-    this.loginEmailInput = page.locator('[data-qa="login-email"]');
-    this.loginPasswordInput = page.locator('[data-qa="login-password"]');
-    this.loginButton = page.locator('[data-qa="login-button"]');
 
-    // Seletores de Cadastro (Signup)
-    this.newUserMessage = page.locator('.signup-form h2');
-    this.signupNameInput = page.locator('[data-qa="signup-name"]');
-    this.signupEmailInput = page.locator('[data-qa="signup-email"]');
-    this.signupButton = page.locator('[data-qa="signup-button"]');
+  visit(): void {
+    cy.visit('/')
   }
 
-  async goToSignup() {
-    await this.navigateTo('/login');
+
+  fillUsername(username: string): void {
+    if(username !== ''){
+      cy.get(this.usernameInput).clear().type(username)
+    } else {
+      cy.get(this.usernameInput).clear()
+    }
   }
 
-  async initiateSignup(name: string, email: string) {
-    await this.signupNameInput.fill(name);
-    await this.signupEmailInput.fill(email);
-    await this.signupButton.click();
+  fillPassword(password:string): void {
+    if (password !== '') {
+      cy.get(this.passwordInput).clear().type(password)
+    } else{
+      cy.get(this.passwordInput).clear()
+    }
   }
 
-  async login(email: string, pass: string) {
-    await this.loginEmailInput.fill(email);
-    await this.loginPasswordInput.fill(pass);
-    await this.loginButton.click();
+  submit():void {
+    cy.get(this.loginButton).click()
   }
+
+  login(username: string, password: string): void {
+    this.fillUsername(username)
+    this.fillPassword(password)
+    this.submit()
+  }
+
+  getErrorMessage(): Cypress.Chainable<JQuery<HTMLElement>> {
+    return cy.get(this.errorMessage)
+  }
+
+  assertErrorMessage(message: string): void {
+    this.getErrorMessage().should('be.visible').and('contain.text', message)
+  }
+
+  assertOnLoginPage(): void {
+    cy.url().should('include', '/index.html')
+    cy.get(this.loginButton).should('be.visible')
+  }
+
+  assertOnHomePage(): void {
+    cy.url().should('include', '/inventory.html')
+    cy.get(this.inventory).should('be.visible')
+  }
+
 }
